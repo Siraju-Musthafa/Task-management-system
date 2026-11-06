@@ -1,13 +1,22 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-const protect = async (req, res, next) => {
+// Verify JWT
+exports.protect = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    let token;
+
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer ")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
     if (!token) {
       return res.status(401).json({
-        message: "Not authorized",
+        success: false,
+        message: "Not authorized. Please login.",
       });
     }
 
@@ -15,9 +24,10 @@ const protect = async (req, res, next) => {
 
     const user = await User.findById(decoded.id);
 
-    if (!user || !user.isActive) {
+    if (!user) {
       return res.status(401).json({
-        message: "Invalid or inactive account",
+        success: false,
+        message: "User no longer exists",
       });
     }
 
@@ -26,9 +36,22 @@ const protect = async (req, res, next) => {
     next();
   } catch (error) {
     return res.status(401).json({
+      success: false,
       message: "Invalid or expired token",
     });
   }
 };
 
-module.exports = { protect };
+// Check user role
+exports.authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to access this resource",
+      });
+    }
+
+    next();
+  };
+};

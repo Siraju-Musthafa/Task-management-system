@@ -7,7 +7,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Name is required"],
       trim: true,
-      maxlength: 100,
     },
 
     email: {
@@ -20,8 +19,8 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
-      minlength: 8,
+      required: [true, "Password is required"],
+      minlength: 6,
       select: false,
     },
 
@@ -30,10 +29,6 @@ const userSchema = new mongoose.Schema(
       enum: ["Admin", "Manager", "User"],
       default: "User",
     },
-
-    
-
-   
   },
   {
     timestamps: true,
@@ -48,8 +43,8 @@ userSchema.pre("save", async function () {
 });
 
 // Compare password
-userSchema.methods.comparePassword = async function (password) {
-  return bcrypt.compare(password, this.password);
+userSchema.methods.comparePassword = async function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 module.exports = mongoose.model("User", userSchema);
